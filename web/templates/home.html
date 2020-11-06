@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Word Cloud</title>
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+<script src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/d3.layout.cloud.js') }}"></script>
+
+<div id="my_dataviz" style="text-align: center;"></div>
+
+<script>
+var myWords = {{ data | tojson }}
+
+var margin = {top: 5, right: 5, bottom: 5, left: 5},
+    width = {{ custom_width }} - margin.left - margin.right,
+    height = {{ custom_height }} - margin.top - margin.bottom;
+
+var svg = d3.select("#my_dataviz").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+var layout = d3.layout.cloud()
+  .size([width, height])
+  .words(myWords.map(function(d) { return {text: d.word, size:d.size}; }))
+  .padding(5)        //space between words
+  .rotate(function() { return ~~(Math.random() * 4 - 2) * {{ custom_angle }}; })
+  .fontSize(function(d) { return d.size; })
+  .on("end", draw);
+layout.start();
+
+function draw(words) {
+  svg
+    .append("g")
+      .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+      .selectAll("text")
+        .data(words)
+      .enter().append("text")
+        .style("font-size", function(d) { return d.size; })
+        .style("fill", function () {
+			return 'rgb(' + [
+				Math.round(Math.random() * 160),
+				Math.round(Math.random() * 160),
+				Math.round(Math.random() * 160)
+			].join(',') + ')';
+		})
+        .attr("text-anchor", "middle")
+        .style("font-family", "Impact")
+        .attr("transform", function(d) {
+          return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+        })
+        .text(function(d) { return d.text; });
+}
+</script>
